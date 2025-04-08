@@ -2,85 +2,120 @@
 The Simplest Graph: Build a simple graph with 3 nodes and one conditional edge.
 """
 
-from dotenv import load_dotenv
-from langchain_core.messages import HumanMessage
-from langchain_groq import ChatGroq
+import random
 from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
-from typing_extensions import TypedDict, Annotated
+from pydantic import BaseModel, Field
+from rich import print
+from typing_extensions import Literal
 
 
-load_dotenv()
-
-
-class State(TypedDict):
+class State(BaseModel):
     """
-    Messages have the type "list". The `add_messages` function
-    in the annotation defines how this state key should be updated
-    (in this case, it appends messages to the list, rather than overwriting them)
+    The `State` schema serves as the input schema for all `Nodes` and `Edges` in the graph
     """
 
-    messages: Annotated[list, add_messages]
+    graph_state: str = Field(
+        default_factory=str,
+    )
 
 
-graph_builder = StateGraph(State)
-
-llm = ChatGroq(
-    model="llama-3.1-8b-instant",
-    temperature=0.0,
-)
-
-
-def chatbot(state: State) -> State:
+def node_1(state):
     """
-    Chatbot node:
-        Takes a state and returns a new state with the updated messages.
+    Node 1:
+    Takes the original `state` and returns a new state: original state + " I am" appended.
+        Args:
+            state: The current state of the graph.
+
+        Returns:
+            The new state after processing the original state.
     """
-    return State(messages=[llm.invoke(state["messages"])])
+
+    print(f"[bold #9cdcfe]{'-' * 10} Node 1 {'-' * 10}[/]")
+    return {"graph_state": state.graph_state + " I am"}
 
 
-graph_builder.add_node("chatbot", chatbot)
-graph_builder.add_edge(START, "chatbot")
-graph_builder.add_edge("chatbot", END)
-graph = graph_builder.compile()
-
-
-def stream_graph_updates(user_input: str):
+def node_2(state):
     """
-    Stream graph updates:
-        Takes a user input and streams the graph updates.
+    Node 2:
+    Takes the original `state` and returns a new state: original state + " happy!" appended.
+
+    Args:
+        state: The current state of the graph.
+
+    Returns:
+        The new state after processing the original state.
     """
-    initial_state = State(messages=[HumanMessage(content=user_input)])
-    for event in graph.stream(initial_state):
-        for value in event.values():
-            print("Assistant:", value["messages"][-1].content)
+
+    print(f"[bold #ce9178]{'-' * 10} Node 2 {'-' * 10}[/]")
+    return {"graph_state": state.graph_state + " happy!"}
 
 
-def main() -> None:
-    """Main interaction loop with error handling."""
-    fallback_msg = "What do you know about LangGraph?"
+def node_3(state):
+    """
+    Node 3:
+    Takes the original `state` and returns a new state: original state + " sad!" appended.
+        Args:
+            state: The current state of the graph.
 
-    while True:
-        try:
-            user_msg = input("User: ").strip()
-            if not user_msg:  # Skip empty messages
-                continue
-            if user_msg.lower() in ["quit", "exit", "q"]:
-                print("Goodbye!")
-                break
-            stream_graph_updates(user_msg)
-        except KeyboardInterrupt:
-            print("\nGoodbye!")
-            break
-        except EOFError:
-            # Fallback if input() is not available
-            print("User: " + fallback_msg)
-            stream_graph_updates(fallback_msg)
-            break
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
-            break
+        Returns:
+            The new state after processing the original state.
+    """
+
+    print(f"[bold #4ec9b0]{'-' * 10} Node 3 {'-' * 10}[/]")
+    return {"graph_state": state.graph_state + " sad!"}
+
+
+def decide_mood(state) -> Literal["node_2", "node_3"]:
+    """
+    Decide on the next `node` to visit based on the current `state`
+        Args:
+            state: The current state of the graph.
+
+        Returns:
+            The next node to visit.
+    """
+
+    # Often, we will use state to decide on the next node to visit
+    user_input = state.graph_state
+
+    # Here, let's just do a 50 / 50 split between nodes 2, 3
+    if random.random() < 0.5:
+        # 50% of the time, we return Node 2
+        return "node_2"
+
+    # 50% of the time, we return Node 3
+    return "node_3"
+
+
+# Build graph
+builder = StateGraph(State)
+builder.add_node("node_1", node_1)
+builder.add_node("node_2", node_2)
+builder.add_node("node_3", node_3)
+
+# Logic
+builder.add_edge(START, "node_1")
+builder.add_conditional_edges("node_1", decide_mood)
+builder.add_edge("node_2", END)
+builder.add_edge("node_3", END)
+
+# Add
+graph = builder.compile()
+
+
+def invoke_graph(compiled_graph, name: str):
+    """
+    Invokes the compiled graph with the given name.
+
+    Args:
+        compiled_graph: The compiled graph to invoke.
+        name: The name to use in the graph.
+
+    Returns:
+        The result of the graph execution.
+    """
+    return compiled_graph.invoke({"graph_state": f"Hi, this is {name}."})
 
 
 if __name__ == "__main__":
-    main()
+    print(invoke_graph(graph, "Pipo"))
