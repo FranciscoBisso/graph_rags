@@ -30,7 +30,7 @@ def node_1(state):
             The new state after processing the original state.
     """
 
-    print(f"[bold #9cdcfe]{'-' * 10} Node 1 {'-' * 10}[/]")
+    print(f"[bold #9cdcfe]••• Node 1 •••[/]")
     return {"graph_state": state.graph_state + " I am"}
 
 
@@ -46,7 +46,7 @@ def node_2(state):
         The new state after processing the original state.
     """
 
-    print(f"[bold #ce9178]{'-' * 10} Node 2 {'-' * 10}[/]")
+    print(f"[bold #ce9178]••• Node 2 •••[/]")
     return {"graph_state": state.graph_state + " happy!"}
 
 
@@ -61,7 +61,7 @@ def node_3(state):
             The new state after processing the original state.
     """
 
-    print(f"[bold #4ec9b0]{'-' * 10} Node 3 {'-' * 10}[/]")
+    print(f"[bold #4ec9b0]••• Node 3 •••[/]")
     return {"graph_state": state.graph_state + " sad!"}
 
 
