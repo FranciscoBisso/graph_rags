@@ -1,6 +1,4 @@
-"""
-The Simplest Graph: Build a simple graph with 3 nodes and one conditional edge.
-"""
+"""A Simple Chatbot"""
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
