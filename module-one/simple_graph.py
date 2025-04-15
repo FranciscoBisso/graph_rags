@@ -1,26 +1,26 @@
 """
-The Simplest Graph: Build a simple graph with 3 nodes and one conditional edge.
+The Simplest Graph: build a simple graph with 3 nodes and one conditional edge.
 """
 
 import random
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
-from pydantic import BaseModel, Field
 from rich import print
 from typing_extensions import Literal
+from typing import TypedDict
 
 
-class State(BaseModel):
+class GraphState(TypedDict):
     """
-    The `State` schema serves as the input schema for all `Nodes` and `Edges` in the graph
+    The first thing you do when you define a graph is define the `GraphState` of the graph.
+    The `GraphState` consists of the schema of the graph as well as reducer functions which specify how to apply updates to the state.
+    Graph's `nodes` communicate by reading and writing to a shared state.
     """
 
-    graph_state: str = Field(
-        default_factory=str,
-    )
+    graph_state: str
 
 
-def node_1(state: State) -> State:
+def node_1(state: GraphState) -> GraphState:
     """
     Node 1: Takes the original `state` and returns a new state: original state + "I am " appended.
         Args:
@@ -31,10 +31,11 @@ def node_1(state: State) -> State:
     """
 
     print("[bold #9cdcfe]••• Node 1 •••[/]")
-    return State(graph_state=state.graph_state + "I am ")
+    state["graph_state"] = state["graph_state"] + "I am "
+    return state
 
 
-def node_2(state: State) -> State:
+def node_2(state: GraphState) -> GraphState:
     """
     Node 2: Takes the original `state` and returns a new state: original state + "happy!" appended.
         Args:
@@ -45,10 +46,11 @@ def node_2(state: State) -> State:
     """
 
     print("[bold #ffd700]••• Node 2 •••[/]")
-    return State(graph_state=state.graph_state + "happy!")
+    state["graph_state"] = state["graph_state"] + "happy!"
+    return state
 
 
-def node_3(state: State) -> State:
+def node_3(state: GraphState) -> GraphState:
     """
     Node 3: Takes the original `state` and returns a new state: original state + "sad!" appended.
         Args:
@@ -59,10 +61,11 @@ def node_3(state: State) -> State:
     """
 
     print("[bold #4ec9b0]••• Node 3 •••[/]")
-    return State(graph_state=state.graph_state + "sad!")
+    state["graph_state"] = state["graph_state"] + "sad!"
+    return state
 
 
-def decide_mood(state: State) -> Literal["node_2", "node_3"]:
+def decide_mood(state: GraphState) -> Literal["node_2", "node_3"]:
     """
     Decide on the next `node` to visit based on the current `state`.
         Args:
@@ -73,15 +76,9 @@ def decide_mood(state: State) -> Literal["node_2", "node_3"]:
     """
 
     # Often, we will use state to decide on the next node to visit
-    user_input = state.graph_state  # noqa: F841, pylint: disable=unused-variable (disable linters' rules)
+    user_input = state["graph_state"]  # noqa: F841, pylint: disable=unused-variable (disable linters' rules)
 
-    # Here, let's just do a 50 / 50 split between nodes 2, 3
-    if random.random() < 0.5:
-        # 50% of the time, we return Node 2
-        return "node_2"
-
-    # 50% of the time, we return Node 3
-    return "node_3"
+    return random.choice(["node_2", "node_3"])
 
 
 def build_and_compile_graph() -> CompiledStateGraph:
@@ -90,8 +87,8 @@ def build_and_compile_graph() -> CompiledStateGraph:
         Returns:
             An instance of `CompiledStateGraph`.
     """
-    # Build graph
-    builder = StateGraph(State)
+    # Build a graph whose nodes communicate by reading and writing to a shared state.
+    builder = StateGraph(GraphState)
     builder.add_node("node_1", node_1)
     builder.add_node("node_2", node_2)
     builder.add_node("node_3", node_3)
@@ -118,9 +115,11 @@ def invoke_graph(graph: CompiledStateGraph) -> str:
     """
     user_name: str = input("What is your name? ")
     name: str = user_name.strip().title() if user_name else "John Doe"
-    response = graph.invoke(State(graph_state=f"Hi, this is {name}. "))
+    response = graph.invoke({"graph_state": f"Hi, this is {name}. "})
     return response["graph_state"]
 
 
 if __name__ == "__main__":
-    print("[bold #ce9178]RES: [/]", invoke_graph(build_and_compile_graph()))
+    compiled_graph = build_and_compile_graph()
+    res = invoke_graph(compiled_graph)
+    print(f"[bold light_slate_blue]RES: [/] [bold orange1]{res}[/]")
