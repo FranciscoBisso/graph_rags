@@ -40,13 +40,12 @@ def bind_tools_to_llm(chat_model: ChatGroq, tools: list[Callable]):
     """
     Binds tools to a chat model:
     Gives awareness to the model about the tools available by providing the payload needed for the tool.
-    For example:
-    {
-        'name': 'multiply',
-        'args': {'first_int': 2, 'second_int': 2},
-        'id': 'call_2k1a',
-        'type': 'tool_call'
-    }
+        Payload example:
+            {
+                'id': 'call_1p4t',
+                'function': {'arguments': '{"first_int": 2, "second_int": 2}', 'name': 'multiply'},
+                'type': 'function'
+            }
         Args:
             chat_model: The chat model to bind tools to.
             tools: A list of tools to bind to the chat model.
