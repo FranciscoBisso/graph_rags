@@ -26,7 +26,7 @@ llm: ChatGroq = ChatGroq(
 
 def multiply(first_int: int, second_int: int) -> int:
     """
-    Multiplies two integers.
+    Multiplies two given integers.
         Args:
             first_int: first int
             second_int: second int
@@ -38,7 +38,15 @@ def multiply(first_int: int, second_int: int) -> int:
 
 def bind_tools_to_llm(chat_model: ChatGroq, tools: list[Callable]):
     """
-    Binds tools to a chat model.
+    Binds tools to a chat model:
+    Gives awareness to the model about the tools available by providing the payload needed for the tool.
+    For example:
+    {
+        'name': 'multiply',
+        'args': {'first_int': 2, 'second_int': 2},
+        'id': 'call_2k1a',
+        'type': 'tool_call'
+    }
         Args:
             chat_model: The chat model to bind tools to.
             tools: A list of tools to bind to the chat model.
@@ -60,8 +68,8 @@ def tool_calling_llm_node(state: MessagesState) -> MessagesState:
             The new `state` after processing the original `state`.
     """
     llm_with_tools = bind_tools_to_llm(chat_model=llm, tools=[multiply])
-
-    return MessagesState(messages=[llm_with_tools.invoke(state["messages"])])
+    state["messages"] = [llm_with_tools.invoke(state["messages"])]
+    return state
 
 
 def create_graph() -> CompiledStateGraph:
@@ -85,7 +93,7 @@ def create_graph() -> CompiledStateGraph:
 
 def invoke_graph(graph: CompiledStateGraph, user_input: str):
     """
-    Invokes the compiled graph with the given name.
+    Invokes the compiled graph (graph state + nodes + edges) with the given name.
         Args:
             graph: The compiled graph to invoke.
         Returns:
@@ -97,3 +105,5 @@ def invoke_graph(graph: CompiledStateGraph, user_input: str):
 if __name__ == "__main__":
     response = invoke_graph(graph=create_graph(), user_input=input("User: ").strip())
     print(response)
+    for m in response["messages"]:
+        print("\n\n", m)

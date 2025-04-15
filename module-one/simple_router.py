@@ -39,13 +39,12 @@ def multiply(first_int: int, second_int: int) -> int:
 
 def bind_tools_to_llm(chat_model: ChatGroq, tools: list[Callable]) -> Runnable:
     """
-    Binds tools to a chat model.
-        Args:
-            chat_model: The chat model to bind tools to.
-            tools: A list of tools to bind to the chat model.
+    Args:
+        chat_model: The chat model to bind tools to.
+        tools: A list of tools to bind to the chat model.
 
-        Returns:
-            A chat model with the tools bound.
+    Returns:
+        A chat model with the tools bound.
     """
     return chat_model.bind_tools(tools)
 
@@ -72,7 +71,7 @@ def compile_graph() -> CompiledStateGraph:
         Returns:
             An instance of `CompiledStateGraph`.
     """
-    # Build graph
+    # Build a graph whose nodes communicate by reading and writing to a shared state
     builder = StateGraph(MessagesState)
     # Add nodes
     builder.add_node("tool_calling_llm_node", tool_calling_llm_node)
@@ -90,7 +89,7 @@ def compile_graph() -> CompiledStateGraph:
     return builder.compile()
 
 
-def invoke_graph(compiled_graph: CompiledStateGraph, user_msg: str):
+def invoke_graph(compiled_graph: CompiledStateGraph):
     """
     Invokes the compiled graph with the given name.
         Args:
@@ -99,17 +98,18 @@ def invoke_graph(compiled_graph: CompiledStateGraph, user_msg: str):
         Returns:
             The result of the graph execution.
     """
-    if not user_msg.strip():
-        raise ValueError("User input cannot be empty")
+    user_input: str = input("User: ")
+    if not user_input.strip():
+        print("❗️❗️❗️ [bold red]MUST PROVIDE A MESSAGE TO INVOKE THE GRAPH[/] ❗️❗️❗️")
+        invoke_graph(compiled_graph)
 
-    result = compiled_graph.invoke({"messages": [HumanMessage(content=user_msg)]})
+    result = compiled_graph.invoke({"messages": [HumanMessage(content=user_input)]})
 
     return result
 
 
 if __name__ == "__main__":
     graph: CompiledStateGraph = compile_graph()
-    user_input: str = input("User: ")
-    response = invoke_graph(compiled_graph=graph, user_msg=user_input)
+    response = invoke_graph(compiled_graph=graph)
     for m in response["messages"]:
         print("\n\n", m)
