@@ -6,13 +6,15 @@ This is a simple example of an `agent`. The `LLM` is directing the control flow 
 from typing import Callable
 
 from dotenv import load_dotenv
-from langchain_core.messages import HumanMessage
 from langchain_core.runnables.base import Runnable
 from langchain_groq import ChatGroq
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from rich import print
+
+# from langchain_core.messages import HumanMessage
+
 
 load_dotenv()
 
@@ -101,8 +103,9 @@ def invoke_graph(compiled_graph: CompiledStateGraph):
 		print("❗️❗️❗️ [bold red]MUST PROVIDE A MESSAGE TO INVOKE THE GRAPH[/] ❗️❗️❗️")
 		invoke_graph(compiled_graph)
 
-	result = compiled_graph.invoke({"messages": [HumanMessage(content=user_input)]})
-
+	# The input is a dict `{"messages": [("human", user_input)]}` or, another valid way: `{"messages": [HumanMessage(content=user_input)]}`,
+	# sets the initial condition/starting value for the graph's state dict
+	result = compiled_graph.invoke({"messages": [("human", user_input)]})
 	return result
 
 
@@ -110,4 +113,5 @@ if __name__ == "__main__":
 	graph: CompiledStateGraph = compile_graph()
 	response = invoke_graph(compiled_graph=graph)
 	for m in response["messages"]:
+		print("\n\n", m)
 		print("\n\n", m)

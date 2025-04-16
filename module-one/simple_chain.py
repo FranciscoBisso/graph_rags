@@ -9,11 +9,12 @@ Build a simple chain that combines 4 concepts:
 from typing import Callable
 
 from dotenv import load_dotenv
-from langchain_core.messages import HumanMessage
 from langchain_groq import ChatGroq
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from rich import print
+
+# from langchain_core.messages import HumanMessage
 
 load_dotenv()
 
@@ -106,7 +107,9 @@ def invoke_graph(graph: CompiledStateGraph):
 		print("❗️❗️❗️ [bold red]MUST PROVIDE A MESSAGE TO INVOKE THE GRAPH[/] ❗️❗️❗️")
 		invoke_graph(graph)
 
-	return graph.invoke({"messages": [HumanMessage(content=user_input)]})
+	# The input is a dict `{"messages": [("human", user_input)]}` or, another valid way: `{"messages": [HumanMessage(content=user_input)]}`,
+	# sets the initial condition/starting value for the graph's state dict
+	return graph.invoke({"messages": [("human", user_input)]})
 
 
 if __name__ == "__main__":

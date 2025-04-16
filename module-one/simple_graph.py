@@ -118,7 +118,7 @@ def invoke_graph(graph: CompiledStateGraph) -> str:
 	"""
 	user_name: str = input("What is your name? ")
 	name: str = user_name.strip().title() if user_name else "John Doe"
-	response = graph.invoke({"graph_state": f"Hi, this is {name}. "})
+	response = graph.invoke({"graph_state": f"Hi, this is {name}."})
 	return response["graph_state"]
 
 
